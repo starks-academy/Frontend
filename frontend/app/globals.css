@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter);
+  --color-brand-orange: #f58320;
+  --color-brand-purple: #1f1b40;
+  --color-brand-dark: #0a0b1a;
+  --color-card-bg: #14152c;
+  --color-card-border: #2a2b4a;
+}
