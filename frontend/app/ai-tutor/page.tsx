@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Sparkles, ListChecks, FileText, Shuffle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 type QuizFormat = "multi-choice" | "open-ended" | "mixed" | null;
 
@@ -116,19 +117,21 @@ function AITutorForm() {
           </span>
         </div>
 
-        {/* Submit Action */}
-        <button 
-          className={`w-full py-5 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all
-            ${topic.trim() && selectedFormat 
-              ? "bg-linear-to-r from-[#F58320] to-[#FF4500] text-white shadow-[0_0_30px_rgba(245,131,32,0.4)] hover:shadow-[0_0_40px_rgba(245,131,32,0.6)]" 
-              : "bg-[#14152C] text-[#8E90B0] cursor-not-allowed border border-[#2A2B4A]"
-            }
-          `}
-          disabled={!topic.trim() || !selectedFormat}
-        >
-          <Sparkles className="w-6 h-6" /> 
-          Generate Quiz
-        </button>
+          {/* Submit Action */}
+          <Link href="/ai-tutor/quiz">
+            <button 
+              className={`w-full py-5 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all
+                ${topic.trim() && selectedFormat 
+                  ? "bg-linear-to-r from-[#F58320] to-[#FF4500] text-white shadow-[0_0_30px_rgba(245,131,32,0.4)] hover:shadow-[0_0_40px_rgba(245,131,32,0.6)]" 
+                  : "bg-[#14152C] text-[#8E90B0] cursor-not-allowed border border-[#2A2B4A]"
+                }
+              `}
+              disabled={!topic.trim() || !selectedFormat}
+            >
+              <Sparkles className="w-6 h-6" /> 
+              Generate Quiz
+            </button>
+          </Link>
 
       </div>
     </div>
