@@ -3,7 +3,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 
 interface FeedbackAlertProps {
   isCorrect: boolean;
-  explanation: string;
+  explanation: React.ReactNode;
 }
 
 export default function FeedbackAlert({
