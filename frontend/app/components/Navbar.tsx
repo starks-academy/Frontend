@@ -8,7 +8,9 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
+    { name: "Learning Path", href: "/learning-path" },
     { name: "Curriculum", href: "#" },
+    { name: "AI Tutor", href: "/ai-tutor" },
     { name: "Builders Connect", href: "/builders-connect" },
     { name: "Community", href: "#" },
     { name: "Profile", href: "/dashboard" },
