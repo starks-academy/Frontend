@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { CheckCircle2, Circle, Lock, ArrowRight, Play } from "lucide-react";
 
 export type ModuleState = "completed" | "in-progress" | "locked";
@@ -130,21 +131,29 @@ export default function ModuleCard({
 
           {/* Action Button */}
           <div className="mt-6 pt-2">
-            <button 
-              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all
-                ${isCompleted ? "bg-[#2A2B4A] text-white hover:bg-[#2A2B4A]/80" : 
-                  isInProgress ? "bg-[#F58320] text-white hover:bg-[#F58320]/90 shadow-[0_0_15px_rgba(245,131,32,0.3)]" : 
-                  "bg-[#0A0B1A] text-[#8E90B0] cursor-not-allowed border border-[#2A2B4A]"}`}
-              disabled={isLocked}
-            >
-              {isCompleted ? (
-                <>Review Module</>
-              ) : isInProgress ? (
-                <>Continue Learning <Play className="w-4 h-4 fill-current" /></>
-              ) : (
-                <><Lock className="w-4 h-4" /> Locked</>
-              )}
-            </button>
+            {isLocked ? (
+              <button 
+                className="w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all bg-[#0A0B1A] text-[#8E90B0] cursor-not-allowed border border-[#2A2B4A]"
+                disabled
+              >
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            ) : (
+              <Link href={`/ai-tutor?topic=${encodeURIComponent(title)}`} className="w-full block">
+                <button 
+                  className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all
+                    ${isCompleted ? "bg-[#2A2B4A] text-white hover:bg-[#2A2B4A]/80" : 
+                      isInProgress ? "bg-[#F58320] text-white hover:bg-[#F58320]/90 shadow-[0_0_15px_rgba(245,131,32,0.3)]" : 
+                      ""}`}
+                >
+                  {isCompleted ? (
+                    <>Test Knowledge with AI</>
+                  ) : (
+                    <>Continue Learning <Play className="w-4 h-4 fill-current" /></>
+                  )}
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
