@@ -6,6 +6,7 @@ import {
   isConnected,
   getUserData,
   disconnect,
+  showSignMessage,
 } from "@stacks/connect";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2, Wallet, LogOut, ChevronDown } from "lucide-react";
@@ -41,30 +42,31 @@ export default function WalletConnectButton() {
               ? `${window.location.origin}/favicon.ico`
               : "",
         },
+        // Called when the user approves the connection in their Stacks wallet
         onFinish: async () => {
           try {
-            // Wallet is now connected — get user data
             if (!isConnected()) throw new Error("Wallet not connected");
+
             const userData = getUserData();
-            if (!userData) throw new Error("No user data");
+            if (!userData) throw new Error("No user data returned from wallet");
 
             const walletAddress =
               userData.profile?.stxAddress?.testnet ||
               userData.profile?.stxAddress?.mainnet;
             if (!walletAddress) throw new Error("No STX address found");
 
-            // Get challenge → sign → verify
+            // Request a sign challenge from the backend
             const message = await requestChallenge(walletAddress);
 
-            // Sign using @stacks/connect signMessage
-            const { showSignMessageRequestPopup } = await import("@stacks/connect");
-            showSignMessageRequestPopup({
+            // Ask the wallet to sign the challenge message
+            showSignMessage({
               message,
-              onFinish: async (payload) => {
+              onFinish: async (data: { signature: string; publicKey: string }) => {
+                // Complete login: verify signature → get JWT
                 await completeLogin(
                   walletAddress,
-                  payload.signature,
-                  payload.publicKey
+                  data.signature,
+                  data.publicKey
                 );
                 setConnecting(false);
               },
@@ -78,7 +80,9 @@ export default function WalletConnectButton() {
         onCancel: () => setConnecting(false),
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Connection failed");
+      setError(
+        err instanceof Error ? err.message : "Connection failed. Try again."
+      );
       setConnecting(false);
     }
   };
@@ -147,7 +151,7 @@ export default function WalletConnectButton() {
         )}
         {connecting ? "Connecting…" : "Connect Wallet"}
       </button>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-400 max-w-[220px] text-right">{error}</p>}
     </div>
   );
 }
