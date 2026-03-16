@@ -1,124 +1,118 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import HeroProgressWidget from "./components/HeroProgressWidget";
 import ModuleCard, { Step, ModuleState } from "./components/ModuleCard";
 import FinalAssessmentCard from "./components/FinalAssessmentCard";
-import { Compass, BookOpen, FileCode2, Blocks, Cpu, Rocket } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { coursesApi, type Course } from "@/lib/api/courses";
+import { useAuth } from "@/context/AuthContext";
 
-// Mock Data
-const MODULES = [
-  {
-    id: 1,
-    title: "Bitcoin Fundamentals",
-    description: "Understand the core principles of Bitcoin, from transaction mechanics to its overarching economic model.",
-    state: "completed" as ModuleState,
-    icon: <Compass className="w-5 h-5" />,
-    steps: [
-      { title: "Bitcoin 101", state: "completed" },
-      { title: "The Bitcoin Network", state: "completed" },
-      { title: "Proof of Work", state: "completed" },
-      { title: "Wallets & Nodes", state: "completed" },
-    ] as Step[],
-  },
-  {
-    id: 2,
-    title: "Introduction to Stacks",
-    description: "Explore the Stacks layer 2 ecosystem, understand POX, and discover how it extends Bitcoin's capabilities.",
-    state: "completed" as ModuleState,
-    icon: <BookOpen className="w-5 h-5" />,
-    steps: [
-      { title: "Basics of Stacks", state: "completed" },
-      { title: "Proof of Transfer (PoX)", state: "completed" },
-      { title: "sBTC Overview", state: "completed" },
-      { title: "Stacks Architecture", state: "completed" },
-    ] as Step[],
-  },
-  {
-    id: 3,
-    title: "Clarity Smart Contracts",
-    description: "Write flexible, predictable smart contracts using the Clarity programming language.",
-    state: "in-progress" as ModuleState,
-    icon: <FileCode2 className="w-5 h-5" />,
-    progressPercentage: 50,
-    steps: [
-      { title: "Clarity Syntax", state: "completed" },
-      { title: "Built-in Functions", state: "in-progress" },
-      { title: "Deploying Contracts", state: "pending" },
-    ] as Step[],
-  },
-  {
-    id: 4,
-    title: "Build dApps",
-    description: "Integrate Clarity contracts with front-end applications to create complete Stacks dApps.",
-    state: "locked" as ModuleState,
-    icon: <Blocks className="w-5 h-5" />,
-    steps: [
-      { title: "Stacks JS Basics", state: "locked" },
-      { title: "Wallet Authentication", state: "locked" },
-      { title: "Connecting Contracts", state: "locked" },
-      { title: "Real-world Project", state: "locked" },
-    ] as Step[],
-  },
-  {
-    id: 5,
-    title: "Advanced Smart Contract Patterns",
-    description: "Master advanced Clarity concepts, DeFi patterns, and performance optimizations.",
-    state: "locked" as ModuleState,
-    icon: <Cpu className="w-5 h-5" />,
-    steps: [
-      { title: "Advanced Methods", state: "locked" },
-      { title: "Security Best Practices", state: "locked" },
-      { title: "DeFi Implementations", state: "locked" },
-      { title: "Performance Profiling", state: "locked" },
-    ] as Step[],
-  },
-  {
-    id: 6,
-    title: "Build Real Projects",
-    description: "Apply your knowledge by building and deploying full-scale ecosystem projects.",
-    state: "locked" as ModuleState,
-    icon: <Rocket className="w-5 h-5" />,
-    steps: [
-      { title: "Project Proposal", state: "locked" },
-      { title: "DApp Architecture", state: "locked" },
-      { title: "Final Polish", state: "locked" },
-      { title: "Mainnet Deployment", state: "locked" },
-    ] as Step[],
-  },
-];
+// Map course id to icon component name (since icons can't come from backend)
+const COURSE_ICONS: Record<number, React.ReactNode> = {
+  1: <span className="text-lg">₿</span>,
+  2: <span className="text-lg">⚡</span>,
+  3: <span className="text-lg">📝</span>,
+  4: <span className="text-lg">🧱</span>,
+  5: <span className="text-lg">🔬</span>,
+  6: <span className="text-lg">🚀</span>,
+};
+
+function deriveModuleState(
+  course: Course,
+  progressMap: Record<number, number>,
+  index: number,
+): ModuleState {
+  const pct = progressMap[course.id] ?? 0;
+  if (pct === 100) return "completed";
+  if (pct > 0) return "in-progress";
+  // First course always unlocked, rest locked until previous is done
+  if (index === 0) return "in-progress";
+  const prevPct = progressMap[index] ?? 0; // previous course id = index (1-based)
+  return prevPct === 100 ? "in-progress" : "locked";
+}
 
 export default function LearningPathPage() {
+  const { isAuthenticated } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    coursesApi
+      .getCurriculum()
+      .then(async (data) => {
+        setCourses(data);
+
+        // Fetch progress for each course if authenticated
+        if (isAuthenticated) {
+          const entries = await Promise.allSettled(
+            data.map((c) => coursesApi.getCourseProgress(c.id)),
+          );
+          const map: Record<number, number> = {};
+          entries.forEach((result, i) => {
+            if (result.status === "fulfilled") {
+              map[data[i].id] = result.value.progressPercentage;
+            }
+          });
+          setProgressMap(map);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [isAuthenticated]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0B1A] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-brand-orange animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0B1A] pt-28 pb-20 px-4 md:px-8 font-sans">
       <HeroProgressWidget />
-      
-      {/* Learning Path Container */}
+
       <div className="relative max-w-4xl mx-auto pt-10">
-        
-        {/* Background Vertical Connected Line */}
-        {/* Hides on mobile to make layout simpler, or can be adjusted */}
-        <div className="absolute top-0 bottom-0 left-[50%] -translate-x-1/2 w-1 bg-linear-to-b from-[#2A2B4A]/50 via-[#2A2B4A]/80 to-[#2A2B4A]/10 hidden md:block"></div>
-        {/* Mobile Connector */}
-        <div className="absolute top-0 bottom-0 left-6 w-[2px] bg-linear-to-b from-[#2A2B4A]/50 to-[#2A2B4A]/10 md:hidden"></div>
-        
+        {/* Vertical connector line */}
+        <div className="absolute top-0 bottom-0 left-[50%] -translate-x-1/2 w-1 bg-linear-to-b from-[#2A2B4A]/50 via-[#2A2B4A]/80 to-[#2A2B4A]/10 hidden md:block" />
+        <div className="absolute top-0 bottom-0 left-6 w-[2px] bg-linear-to-b from-[#2A2B4A]/50 to-[#2A2B4A]/10 md:hidden" />
+
         <div className="flex flex-col gap-12 relative z-10">
-          {MODULES.map((module, index) => {
-            const isLeft = index % 2 === 0;
+          {courses.map((course, index) => {
+            const state = deriveModuleState(course, progressMap, index);
+            const progressPct = progressMap[course.id] ?? 0;
+
+            // Map backend lessons/steps to ModuleCard Step format
+            const steps: Step[] = course.lessons.map((lesson) => ({
+              title: lesson.title,
+              state:
+                (progressMap[course.id] ?? 0) === 100
+                  ? "completed"
+                  : index === 0 && lesson.id === 1
+                    ? "in-progress"
+                    : state === "locked"
+                      ? "locked"
+                      : "pending",
+            }));
+
             return (
               <ModuleCard
-                key={module.id}
-                id={module.id}
-                title={module.title}
-                description={module.description}
-                state={module.state}
-                icon={module.icon}
-                steps={module.steps}
-                progressPercentage={module.progressPercentage}
-                alignment={isLeft ? "left" : "right"}
+                key={course.id}
+                id={course.id}
+                title={course.title}
+                description={course.description}
+                state={state}
+                icon={COURSE_ICONS[course.id] ?? <span>📚</span>}
+                steps={steps}
+                progressPercentage={progressPct > 0 ? progressPct : undefined}
+                alignment={index % 2 === 0 ? "left" : "right"}
               />
             );
           })}
         </div>
-        
+
         <FinalAssessmentCard />
       </div>
     </div>
