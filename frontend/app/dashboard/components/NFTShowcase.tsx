@@ -1,33 +1,22 @@
-import { Award } from "lucide-react";
+import { Award, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { gamificationApi } from "@/lib/api";
 
 export default function NFTShowcase() {
-  const nfts = [
-    {
-      id: 1,
-      name: "Clarity Basics Cohort",
-      description:
-        "Successfully completed the introductory Clarity smart contract course.",
-      date: "Oct 2025",
-      color: "from-blue-500 to-cyan-400",
-      icon: "📘",
-    },
-    {
-      id: 2,
-      name: "DeFi Builder",
-      description: "Built and deployed a functional AMM DEX on testnet.",
-      date: "Nov 2025",
-      color: "from-brand-orange to-red-500",
-      icon: "🏛️",
-    },
-    {
-      id: 3,
-      name: "Bitcoin Native",
-      description: "Mastered sBTC integration within Stacks smart contracts.",
-      date: "Jan 2026",
-      color: "from-orange-400 to-yellow-500",
-      icon: "₿",
-    },
-  ];
+  const { isAuthenticated } = useAuth();
+  const [badges, setBadges] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLoading(true);
+      gamificationApi.getMyBadges()
+        .then(setBadges)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isAuthenticated]);
 
   return (
     <div className="bg-[#1A1A24]/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm">
@@ -42,39 +31,48 @@ export default function NFTShowcase() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nfts.map((nft) => (
-          <div
-            key={nft.id}
-            className="group relative rounded-xl border border-gray-800 bg-black/40 overflow-hidden hover:border-brand-orange/50 transition-all duration-300"
-          >
+        {loading ? (
+           <div className="col-span-full flex justify-center py-10">
+              <Loader2 className="w-8 h-8 text-brand-orange animate-spin" />
+           </div>
+        ) : badges.length > 0 ? (
+          badges.map((nft, index) => (
             <div
-              className={`h-32 w-full bg-linear-to-br ${nft.color} opacity-20 group-hover:opacity-30 transition-opacity`}
-            ></div>
+              key={nft.id || index}
+              className="group relative rounded-xl border border-gray-800 bg-black/40 overflow-hidden hover:border-brand-orange/50 transition-all duration-300"
+            >
+              <div
+                className={`h-32 w-full bg-linear-to-br from-brand-orange to-purple-500 opacity-20 group-hover:opacity-30 transition-opacity`}
+              ></div>
 
-            {/* NFT Graphic Placeholder */}
-            <div className="absolute top-0 left-0 w-full h-32 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-3xl shadow-2xl backdrop-blur-md transform group-hover:scale-110 transition-transform duration-300">
-                {nft.icon}
+              <div className="absolute top-0 left-0 w-full h-32 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-3xl shadow-2xl backdrop-blur-md transform group-hover:scale-110 transition-transform duration-300">
+                  {nft.icon || "🏆"}
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="text-xs text-gray-500 mb-1">{nft.date || "Just now"}</div>
+                <h3 className="text-white font-bold mb-2 group-hover:text-brand-orange transition-colors">
+                  {nft.name || nft.badgeName}
+                </h3>
+                <p className="text-sm text-gray-400 line-clamp-2">
+                  {nft.description}
+                </p>
+              </div>
+
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[10px] font-mono border border-gray-800 text-gray-300">
+                  #STX-{nft.id || "000"}042
+                </div>
               </div>
             </div>
-
-            <div className="p-5">
-              <div className="text-xs text-gray-500 mb-1">{nft.date}</div>
-              <h3 className="text-white font-bold mb-2 group-hover:text-brand-orange transition-colors">
-                {nft.name}
-              </h3>
-              <p className="text-sm text-gray-400 line-clamp-2">
-                {nft.description}
-              </p>
-            </div>
-
-            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[10px] font-mono border border-gray-800 text-gray-300">
-                #STX-{nft.id}042
-              </div>
-            </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center text-gray-500 py-6">
+            No badges earned yet.
           </div>
-        ))}
+        )}
 
         {/* Empty Slot */}
         <div className="rounded-xl border border-gray-800 border-dashed bg-transparent flex items-center justify-center h-[230px] opacity-50 hover:opacity-100 hover:border-gray-600 transition-all cursor-pointer">
