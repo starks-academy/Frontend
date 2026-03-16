@@ -10,10 +10,9 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Learning Path", href: "/learning-path" },
-    { name: "Curriculum", href: "#" },
     { name: "AI Tutor", href: "/ai-tutor" },
     { name: "Builders Connect", href: "/builders-connect" },
-    { name: "Community", href: "#" },
+    { name: "Certificates", href: "/certificates" },
     { name: "Profile", href: "/dashboard" },
   ];
 

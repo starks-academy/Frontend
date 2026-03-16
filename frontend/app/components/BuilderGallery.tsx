@@ -1,149 +1,167 @@
-import { Heart, Twitter, Github } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Heart, ExternalLink, Github, Loader2 } from "lucide-react";
+import { galleryApi, GalleryProject } from "@/lib/api/gallery";
+
+const GRADIENTS = [
+  "from-blue-600 to-cyan-400",
+  "from-purple-600 to-pink-500",
+  "from-orange-500 to-yellow-400",
+  "from-green-500 to-emerald-300",
+  "from-indigo-600 to-blue-400",
+  "from-rose-500 to-orange-400",
+];
+
+function getInitials(title: string) {
+  return title
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export default function BuilderGallery() {
-  const projects = [
-    {
-      title: "DeFi Lending Protocol",
-      likes: 242,
-      tag: "DeFi",
-      gradient: "from-blue-600 to-cyan-400",
-      builder: {
-        name: "Alex Dev",
-        avatar: "AD",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-    {
-      title: "NFT Marketplace",
-      likes: 184,
-      tag: "NFT",
-      gradient: "from-purple-600 to-pink-500",
-      builder: {
-        name: "Sarah Chen",
-        avatar: "SC",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-    {
-      title: "DAO Governance Tool",
-      likes: 156,
-      tag: "DAO",
-      gradient: "from-orange-500 to-yellow-400",
-      builder: {
-        name: "Mike Jordan",
-        avatar: "MJ",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-    {
-      title: "Token Swap dApp",
-      likes: 142,
-      tag: "DeFi",
-      gradient: "from-green-500 to-emerald-300",
-      builder: {
-        name: "Elena R.",
-        avatar: "ER",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-    {
-      title: "Staking Rewards Tracker",
-      likes: 128,
-      tag: "Staking",
-      gradient: "from-indigo-600 to-blue-400",
-      builder: {
-        name: "David Kim",
-        avatar: "DK",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-    {
-      title: "Community Badge System",
-      likes: 115,
-      tag: "Social",
-      gradient: "from-rose-500 to-orange-400",
-      builder: {
-        name: "Lisa Wang",
-        avatar: "LW",
-        twitter: "https://twitter.com",
-        github: "https://github.com",
-      },
-    },
-  ];
+  const [projects, setProjects] = useState<GalleryProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    galleryApi
+      .getAll(1, 6)
+      .then((res) => {
+        const list = Array.isArray(res) ? res : ((res as { data: GalleryProject[] })?.data ?? []);
+        setProjects(list);
+      })
+      .catch(() => setProjects([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleVote = async (id: string) => {
+    try {
+      await galleryApi.vote(id);
+      setVotedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      // Optimistic update of upvote count
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? { ...p, upvotes: votedIds.has(id) ? p.upvotes - 1 : p.upvotes + 1 }
+            : p
+        )
+      );
+    } catch {
+      // Silent fail — user may not be authenticated
+    }
+  };
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
-      <h2 className="text-3xl font-bold text-white mb-12">Builder Gallery</h2>
+      <h2 className="text-3xl font-bold text-white mb-4">Builder Gallery</h2>
+      <p className="text-gray-400 mb-12 max-w-xl mx-auto text-sm">
+        Community projects built by Stacks Academy graduates — real dApps deployed on Bitcoin.
+      </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project, index) => (
-          <div
-            key={index}
-            className="bg-card-bg border border-card-border rounded-xl overflow-hidden hover:border-[#383A5D] transition-colors flex flex-col group text-left"
-          >
-            {/* Image Placeholder */}
-            <div
-              className={`w-full h-48 bg-gradient-to-br ${project.gradient} relative overflow-hidden`}
-            >
-              {/* Optional minimal styling for the thumbnail */}
-              <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] w-full h-full"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-black/20 rounded-lg border border-white/20 shadow-xl backdrop-blur-md"></div>
-            </div>
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-10 h-10 text-brand-orange animate-spin" />
+        </div>
+      ) : projects.length === 0 ? (
+        <p className="text-gray-500 py-12">
+          No projects yet — be the first to submit yours!
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.slice(0, 6).map((project, index) => {
+            const gradient = GRADIENTS[index % GRADIENTS.length];
+            const initials = getInitials(project.title);
+            const isVoted = votedIds.has(project.id);
 
-            <div className="p-5 flex-grow flex flex-col justify-between hidden-border">
-              <div>
-                <h3 className="text-white font-semibold mb-3 text-lg">
-                  {project.title}
-                </h3>
-
-                {/* Builder Info */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center text-xs font-bold text-brand-orange">
-                      {project.builder.avatar}
-                    </div>
-                    <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                      {project.builder.name}
+            return (
+              <div
+                key={project.id}
+                className="bg-card-bg border border-card-border rounded-xl overflow-hidden hover:border-[#383A5D] transition-colors flex flex-col group text-left"
+              >
+                {/* Thumbnail */}
+                <div
+                  className={`w-full h-48 bg-gradient-to-br ${gradient} relative overflow-hidden flex items-center justify-center`}
+                >
+                  <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-black/20 rounded-lg border border-white/20 shadow-xl backdrop-blur-md flex items-center justify-center">
+                    <span className="text-4xl font-black text-white/60 select-none">
+                      {initials}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={project.builder.twitter}
-                      className="text-gray-500 hover:text-[#1DA1F2] transition-colors"
-                      aria-label={`Twitter profile for ${project.builder.name}`}
+                </div>
+
+                <div className="p-5 flex-grow flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-white font-semibold mb-2 text-lg">
+                      {project.title}
+                    </h3>
+                    <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 mb-4">
+                      {project.description}
+                    </p>
+
+                    {/* Links */}
+                    <div className="flex items-center gap-3 mb-4">
+                      {project.repoUrl && (
+                        <a
+                          href={project.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-500 hover:text-white transition-colors"
+                          aria-label="GitHub repo"
+                        >
+                          <Github className="w-4 h-4" />
+                        </a>
+                      )}
+                      {project.liveUrl && (
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-500 hover:text-brand-orange transition-colors"
+                          aria-label="Live demo"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-800 border-dashed">
+                    <span className="text-xs font-medium text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-full border border-brand-orange/20">
+                      {project.category}
+                    </span>
+
+                    <button
+                      onClick={() => handleVote(project.id)}
+                      className={`flex items-center gap-1.5 transition-colors ${
+                        isVoted ? "text-red-400" : "text-gray-400 hover:text-red-400"
+                      }`}
+                      aria-label="Upvote project"
                     >
-                      <Twitter className="w-4 h-4" />
-                    </a>
-                    <a
-                      href={project.builder.github}
-                      className="text-gray-500 hover:text-white transition-colors"
-                      aria-label={`GitHub profile for ${project.builder.name}`}
-                    >
-                      <Github className="w-4 h-4" />
-                    </a>
+                      <Heart
+                        fill={isVoted ? "currentColor" : "none"}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-medium">
+                        {project.upvotes + (isVoted ? 1 : 0)}
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between mt-auto pt-2">
-                <span className="text-xs font-medium text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-full border border-brand-orange/20">
-                  {project.tag}
-                </span>
-
-                <div className="flex items-center gap-1.5 text-gray-400 group-hover:text-red-400 transition-colors">
-                  <Heart fill="currentColor" className="w-4 h-4" />
-                  <span className="text-sm font-medium">{project.likes}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

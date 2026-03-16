@@ -36,8 +36,6 @@ export const galleryApi = {
     );
   },
 
-  getMyProjects: () => request<GalleryProject[]>("/gallery/me"),
-
   getOne: (id: string) => request<GalleryProject>(`/gallery/${id}`),
 
   create: (dto: CreateProjectDto) =>

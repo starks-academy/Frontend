@@ -3,6 +3,8 @@ export { usersApi } from "./users";
 export { gamificationApi } from "./gamification";
 export { galleryApi } from "./gallery";
 export { coursesApi } from "./courses";
+export { certificatesApi } from "./certificates";
+export { buildersApi } from "./builders";
 
 export type {
   AuthResponse,
