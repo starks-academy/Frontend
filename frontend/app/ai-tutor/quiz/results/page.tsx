@@ -96,6 +96,49 @@ export default function QuizResultsPage() {
             total={total}
           />
 
+          {/* Per-question feedback */}
+          {result.results && result.results.length > 0 && (
+            <div className="mt-6 space-y-4">
+              <h3 className="text-white font-bold text-lg">
+                Question Feedback
+              </h3>
+              {result.results.map((r, i) => (
+                <div
+                  key={r.questionId}
+                  className={`rounded-xl border p-5 ${
+                    r.correct
+                      ? "bg-[#052E16]/30 border-[#22C55E]/40"
+                      : "bg-[#450A0A]/30 border-[#EF4444]/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        r.correct
+                          ? "bg-[#22C55E]/20 text-[#22C55E]"
+                          : "bg-[#EF4444]/20 text-[#EF4444]"
+                      }`}
+                    >
+                      {r.correct ? "Correct" : "Incorrect"}
+                    </span>
+                    <span className="text-[#8E90B0] text-xs">
+                      Question {i + 1}
+                    </span>
+                  </div>
+                  <p className="text-[#E2E8F0] text-sm leading-relaxed">
+                    {r.feedback}
+                  </p>
+                  {r.userAnswer && (
+                    <p className="text-[#8E90B0] text-xs mt-2">
+                      Your answer:{" "}
+                      <span className="text-white">{r.userAnswer}</span>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Claude's AI feedback */}
           {result.feedback && (
             <div className="mt-6 bg-[#14152C] border border-[#2A2B4A] rounded-xl p-6">

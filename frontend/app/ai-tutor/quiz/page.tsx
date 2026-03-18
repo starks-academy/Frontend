@@ -47,6 +47,8 @@ function ActiveQuizInner() {
 
   // Generate quiz on mount using the real backend contract
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     assessmentsApi
       .generate({ topic, format, includeAdvanced })
       .then((sess) => {
@@ -57,7 +59,7 @@ function ActiveQuizInner() {
         setError(err?.message ?? "Failed to generate quiz. Please try again."),
       )
       .finally(() => setLoading(false));
-  }, [topic, format]);
+  }, [topic, format, includeAdvanced]);
 
   const currentQuestion: QuizQuestion | undefined = questions[currentIndex];
   const totalQuestions = questions.length;
@@ -227,7 +229,7 @@ function ActiveQuizInner() {
                 explanation={
                   currentQuestion.type === "multiple-choice"
                     ? currentQuestion.explanation
-                    : "Your answer has been recorded. You'll see the AI-graded breakdown on the results page."
+                    : "Answer recorded — Claude will grade this when you finish the quiz."
                 }
               />
             )}
