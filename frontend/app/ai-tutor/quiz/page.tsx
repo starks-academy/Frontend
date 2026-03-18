@@ -23,6 +23,68 @@ const FORMAT_MAP: Record<string, QuizFormatDto> = {
   mixed: "mixed",
 };
 
+// Reference docs mapped by topic keywords
+const DOCS_REFS: { keywords: string[]; label: string; url: string }[] = [
+  {
+    keywords: ["clarity", "contract", "smart contract"],
+    label: "Clarity Language Reference",
+    url: "https://docs.stacks.co/clarity/overview",
+  },
+  {
+    keywords: ["stacks", "stx", "layer 2"],
+    label: "Stacks Documentation",
+    url: "https://docs.stacks.co",
+  },
+  {
+    keywords: ["bitcoin", "btc", "proof of work", "pow", "utxo"],
+    label: "Bitcoin Developer Docs",
+    url: "https://developer.bitcoin.org/devguide/",
+  },
+  {
+    keywords: ["nft", "sip-009", "non-fungible"],
+    label: "SIP-009 NFT Standard",
+    url: "https://github.com/stacksgov/sips/blob/main/sips/sip-009",
+  },
+  {
+    keywords: ["defi", "fungible", "sip-010", "token"],
+    label: "SIP-010 Fungible Token Standard",
+    url: "https://github.com/stacksgov/sips/blob/main/sips/sip-010",
+  },
+  {
+    keywords: ["dao", "governance", "voting"],
+    label: "Stacks Governance",
+    url: "https://docs.stacks.co/concepts/governance",
+  },
+  {
+    keywords: ["pox", "proof of transfer", "stacking"],
+    label: "Proof of Transfer (PoX)",
+    url: "https://docs.stacks.co/concepts/proof-of-transfer",
+  },
+  {
+    keywords: ["wallet", "auth", "authentication", "connect"],
+    label: "Stacks Connect",
+    url: "https://docs.hiro.so/stacks/connect",
+  },
+  {
+    keywords: ["hiro", "api", "explorer"],
+    label: "Hiro Platform Docs",
+    url: "https://docs.hiro.so",
+  },
+];
+
+function getDocRef(
+  topic: string,
+  questionText: string,
+): { label: string; url: string } | null {
+  const haystack = `${topic} ${questionText}`.toLowerCase();
+  for (const ref of DOCS_REFS) {
+    if (ref.keywords.some((kw) => haystack.includes(kw))) {
+      return { label: ref.label, url: ref.url };
+    }
+  }
+  return { label: "Stacks Documentation", url: "https://docs.stacks.co" };
+}
+
 type AnswerMap = Record<string, string>;
 
 function ActiveQuizInner() {
@@ -219,20 +281,70 @@ function ActiveQuizInner() {
               />
             )}
 
-            {isSubmitted && (
-              <FeedbackAlert
-                isCorrect={
-                  currentQuestion.type === "multiple-choice"
-                    ? isCurrentAnswerCorrect
-                    : true
-                }
-                explanation={
-                  currentQuestion.type === "multiple-choice"
-                    ? currentQuestion.explanation
-                    : "Answer recorded — Claude will grade this when you finish the quiz."
-                }
-              />
-            )}
+            {isSubmitted &&
+              (currentQuestion.type === "open-ended" ? (
+                <div className="mt-6 space-y-3">
+                  <div className="p-5 rounded-xl border border-[#2A2B4A] bg-[#14152C]/60">
+                    <h4 className="text-[#F58320] font-bold mb-2 text-sm">
+                      Model Answer
+                    </h4>
+                    <p className="text-[#E2E8F0] text-sm leading-relaxed">
+                      {
+                        (
+                          currentQuestion as import("@/lib/api/assessments").OpenEndedQuestion
+                        ).modelAnswer
+                      }
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-[#2A2B4A] bg-[#0A0B1A]/60 flex items-center gap-3">
+                    <span className="text-[#F58320] shrink-0">⏳</span>
+                    <p className="text-[#8E90B0] text-sm">
+                      Claude will grade your answer when you finish the quiz.
+                    </p>
+                  </div>
+                  {(() => {
+                    const ref = getDocRef(topic, currentQuestion.question);
+                    return ref ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-[#2A2B4A] bg-[#14152C] hover:border-[#F58320]/50 transition-colors group"
+                      >
+                        <span className="text-sm">📖</span>
+                        <span className="text-[#8E90B0] text-sm group-hover:text-white transition-colors">
+                          Learn more:{" "}
+                          <span className="text-[#F58320]">{ref.label}</span>
+                        </span>
+                      </a>
+                    ) : null;
+                  })()}
+                </div>
+              ) : (
+                <div className="mt-6 space-y-3">
+                  <FeedbackAlert
+                    isCorrect={isCurrentAnswerCorrect}
+                    explanation={currentQuestion.explanation}
+                  />
+                  {(() => {
+                    const ref = getDocRef(topic, currentQuestion.question);
+                    return ref ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl border border-[#2A2B4A] bg-[#14152C] hover:border-[#F58320]/50 transition-colors group"
+                      >
+                        <span className="text-sm">📖</span>
+                        <span className="text-[#8E90B0] text-sm group-hover:text-white transition-colors">
+                          Learn more:{" "}
+                          <span className="text-[#F58320]">{ref.label}</span>
+                        </span>
+                      </a>
+                    ) : null;
+                  })()}
+                </div>
+              ))}
           </div>
 
           <QuizActions
