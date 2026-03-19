@@ -3,7 +3,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { Sparkles, ListChecks, FileText, Shuffle, Loader2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { assessmentsApi, QuizQuota } from "@/lib/api/assessments";
 import { useAuth } from "@/context/AuthContext";
 
 type QuizFormat = "multi-choice" | "open-ended" | "mixed" | null;
@@ -17,21 +16,11 @@ function AITutorForm() {
   const [topic, setTopic] = useState(initialTopic);
   const [selectedFormat, setSelectedFormat] = useState<QuizFormat>(null);
   const [includeAdvanced, setIncludeAdvanced] = useState(false);
-  const [quota, setQuota] = useState<QuizQuota | null>(null);
 
   useEffect(() => {
     const topicParam = searchParams.get("topic");
     if (topicParam) setTopic(topicParam);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      assessmentsApi
-        .getQuota()
-        .then(setQuota)
-        .catch(() => null);
-    }
-  }, [isAuthenticated]);
 
   const formatOptions = [
     {
@@ -51,8 +40,7 @@ function AITutorForm() {
     },
   ];
 
-  const quotaExhausted = quota !== null && quota.remaining <= 0;
-  const canGenerate = !!topic.trim() && !!selectedFormat && !quotaExhausted;
+  const canGenerate = !!topic.trim() && !!selectedFormat;
 
   const handleGenerate = () => {
     if (!canGenerate) return;
@@ -66,18 +54,6 @@ function AITutorForm() {
 
   return (
     <div className="w-full max-w-3xl flex flex-col items-center">
-      {/* Usage Pill */}
-      <div className="flex items-center gap-3 bg-[#14152C] rounded-full px-4 py-2 border border-[#2A2B4A] shadow-lg mb-10">
-        <span className="text-[#8E90B0] text-sm">
-          {quota
-            ? `${quota.used} of ${quota.limit} quizzes used today`
-            : "Daily AI quizzes"}
-        </span>
-        <button className="bg-[#F58320] text-white text-xs font-bold px-3 py-1 rounded-full hover:bg-orange-600 transition-colors">
-          Need more? Upgrade
-        </button>
-      </div>
-
       {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -150,14 +126,6 @@ function AITutorForm() {
             Include advanced questions for a deeper challenge
           </span>
         </div>
-
-        {/* Quota exhausted warning */}
-        {quotaExhausted && (
-          <p className="text-center text-yellow-400 text-sm bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-5 py-3">
-            You&apos;ve used all your daily quiz generations. Resets at
-            midnight.
-          </p>
-        )}
 
         {/* Generate Button */}
         <button
