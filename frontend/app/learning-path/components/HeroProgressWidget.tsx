@@ -1,23 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { User, Mail, Trophy, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useXp } from "@/hooks/useXp";
+import { coursesApi } from "@/lib/api/courses";
 
 export default function HeroProgressWidget({
   inBoxCount = 13,
   nftsWonCount = 12,
 }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { xpInfo } = useXp();
+  const [completedModules, setCompletedModules] = useState(0);
+  const [totalModules, setTotalModules] = useState(7);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    coursesApi
+      .getCurriculum()
+      .then(async (courses) => {
+        const filtered = courses.filter((c) => c.lessons?.length > 0);
+        setTotalModules(filtered.length);
+        const results = await Promise.allSettled(
+          filtered.map((c) => coursesApi.getCourseProgress(c.id)),
+        );
+        const completed = results.filter(
+          (r) => r.status === "fulfilled" && r.value.progressPercentage === 100,
+        ).length;
+        setCompletedModules(completed);
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   const journeyPercentage = xpInfo?.progress
     ? Math.min(Math.round(xpInfo.progress * 100), 100)
     : 0;
 
-  // Placeholder completed percentage for course modules since we don't have course API yet
-  const completedPercentage = 0;
+  const completedPercentage =
+    totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
 
   const displayName = user?.displayName || "Anonymous Builder";
   const userLevel = user?.level || 1;
@@ -77,8 +98,8 @@ export default function HeroProgressWidget({
                 ></div>
               </div>
               <div className="flex justify-between mt-2 text-xs text-[#8E90B0]">
-                <span>0 Modules</span>
-                <span>7 Modules</span>
+                <span>{completedModules} Modules</span>
+                <span>{totalModules} Modules</span>
               </div>
             </div>
           </div>
