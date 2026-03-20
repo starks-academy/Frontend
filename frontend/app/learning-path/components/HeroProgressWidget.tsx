@@ -1,19 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { User, Mail, Trophy, Zap } from "lucide-react";
+import { User, Trophy, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useXp } from "@/hooks/useXp";
 import { coursesApi } from "@/lib/api/courses";
+import { certificatesApi } from "@/lib/api/certificates";
 
-export default function HeroProgressWidget({
-  inBoxCount = 13,
-  nftsWonCount = 12,
-}) {
+export default function HeroProgressWidget() {
   const { user, isAuthenticated } = useAuth();
   const { xpInfo } = useXp();
   const [completedModules, setCompletedModules] = useState(0);
   const [totalModules, setTotalModules] = useState(7);
+  const [nftCount, setNftCount] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -22,6 +21,13 @@ export default function HeroProgressWidget({
       .then((summary) => {
         setTotalModules(summary.totalCourses);
         setCompletedModules(summary.completedCourses);
+      })
+      .catch(() => {});
+
+    certificatesApi
+      .getMyCerts()
+      .then((certs) => {
+        setNftCount(certs.filter((c) => !!c.txId).length);
       })
       .catch(() => {});
   }, [isAuthenticated]);
@@ -34,7 +40,6 @@ export default function HeroProgressWidget({
     totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
 
   const displayName = user?.displayName || "Anonymous Builder";
-  const userLevel = user?.level || 1;
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-16 relative z-10">
@@ -123,18 +128,14 @@ export default function HeroProgressWidget({
         {/* Bottom Stats */}
         <div className="flex flex-wrap justify-between items-center pt-6 border-t border-[#2A2B4A]/50 gap-4">
           <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Mail className="w-4 h-4 text-[#F58320]" />
-            <span className="font-medium text-white">{inBoxCount} In Box</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
             <Trophy className="w-4 h-4 text-[#F58320]" />
-            <span className="font-medium text-white">
-              {nftsWonCount} NFTs Won
-            </span>
+            <span className="font-medium text-white">{nftCount} NFTs Won</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <Zap className="w-4 h-4 text-[#F58320]" />
-            <span className="font-medium text-white">Level {userLevel}</span>
+            <span className="font-medium text-white">
+              Level {user?.level ?? 1}
+            </span>
           </div>
         </div>
       </div>
